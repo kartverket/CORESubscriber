@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -46,7 +47,7 @@ namespace CORESubscriber
 
                     SetSyncVariables(args);
 
-                    SynchronzeSubscribedDatasets();
+                    SynchronizeSubscribedDatasets();
 
                     break;
 
@@ -86,24 +87,94 @@ namespace CORESubscriber
             if (args.Count > 4) Provider.ConfigFile = args[4];
         }
 
-        private static void SynchronzeSubscribedDatasets()
+        private static void SynchronizeSubscribedDatasets()
         {
-            foreach (var subscribed in GetSubscribedElements())
-            {
-                if (Dataset.ReadVariables(subscribed))
-                    if (!GetLastIndex.Run()) continue;
+            var timer = StartTimer();
 
-                if(Provider.GeosynchronizationNamespace == XmlNamespaces.Geosynchronization11) OrderChangelog.Run();
-                else OrderChangelog2.Run();
+            var datasetsUpdated = GetSubscribedElements().Select(SynchronizeDataset).ToList();
+
+            timer.Stop();
+
+            WriteStatus(datasetsUpdated.Any(d => !string.IsNullOrWhiteSpace(d)), timer);
+        }
+
+        private static void WriteStatus(bool updatesFound, Stopwatch timer)
+        {
+            if (updatesFound)
+            {
+                Console.WriteLine($"Time used: {timer.Elapsed}");
+
+                return;
+            }
+
+            Console.WriteLine("All datasets are up to date");
+        }
+
+        private static string SynchronizeDataset(XObject subscribed)
+        {
+            if (Dataset.ReadVariables(subscribed))
+                if (!GetLastIndex.Run())
+                    return null;
+
+            WriteDatasetInformation();
+
+            GetChangelog();
+
+            Changelog.Run();
+
+            Dataset.UpdateSettings();
+
+            return Dataset.GetDatasetIdFromElement(subscribed);
+        }
+
+        private static void GetChangelog()
+        {
+            var abortedChangelogId = Dataset.GetAbortedChangelogId();
+
+            var changelogPath = Dataset.GetChangelogPath();
+
+            if (abortedChangelogId == Dataset.EmptyValue)
+            {
+                GetChangelogFromProvider();
+
+                return;
+            }
+
+            if (changelogPath == string.Empty)
+            {
+                Dataset.OrderedChangelogId = abortedChangelogId;
 
                 GetChangelogStatus.Run();
 
-                Changelog.Get(GetChangelog.Run()).Wait();
+                Changelog.Get(SoapAction.GetChangelog.Run()).Wait();
 
-                Changelog.Execute();
-
-                Dataset.UpdateSettings();
+                return;
             }
+
+            Changelog.DataFolder = changelogPath;
+        }
+
+        private static void WriteDatasetInformation()
+        {
+            Console.WriteLine(
+                $"Dataset: {Dataset.Id}\r\n\tProvider LastIndex: {Dataset.ProviderLastIndex}\r\n\tSubscriber Lastindex: {Dataset.SubscriberLastIndex}");
+        }
+
+        private static void GetChangelogFromProvider()
+        {
+            if (Provider.GeosynchronizationNamespace == XmlNamespaces.Geosynchronization11) OrderChangelog.Run();
+            else OrderChangelog2.Run();
+
+            GetChangelogStatus.Run();
+
+            Changelog.Get(SoapAction.GetChangelog.Run()).Wait();
+        }
+
+        private static Stopwatch StartTimer()
+        {
+            var timer = new Stopwatch();
+            timer.Start();
+            return timer;
         }
 
         private static IEnumerable<XElement> GetSubscribedElements()
