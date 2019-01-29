@@ -66,7 +66,7 @@ namespace CORESubscriber
 
         internal static bool ReadVariables(XObject subscribed)
         {
-            Id = subscribed.Parent?.Attribute(XmlAttributes.DatasetId)?.Value;
+            Id = GetDatasetIdFromElement(subscribed);
 
             SubscriberLastIndex = GetSubscriberLastIndex(subscribed);
 
@@ -75,6 +75,11 @@ namespace CORESubscriber
             Version = GetVersion(subscribed);
 
             return OrderedChangelogId == EmptyValue;
+        }
+
+        public static string GetDatasetIdFromElement(XObject subscribed)
+        {
+            return subscribed.Parent?.Attribute(XmlAttributes.DatasetId)?.Value;
         }
 
         private static string GetVersion(XObject subscribed)
@@ -87,7 +92,7 @@ namespace CORESubscriber
             return Convert.ToInt64(subscribed.Parent?.Attribute(XmlAttributes.SubscriberLastIndex)?.Value);
         }
 
-        private static string GetAbortedChangelogId()
+        public static string GetAbortedChangelogId()
         {
             return GetDatasetConfigFirstDescendant(XmlElements.AbortedChangelog).Attribute(XmlAttributes.ChangelogId)
                 .Value;
@@ -99,6 +104,12 @@ namespace CORESubscriber
                 .SetAttributeValue(XmlAttributes.ChangelogPath, dataFolder);
 
             Provider.Save();
+        }
+
+        public static string GetChangelogPath()
+        {
+            return GetDatasetConfigFirstDescendant(XmlElements.AbortedChangelog)
+                .Attribute(XmlAttributes.ChangelogPath).Value;
         }
 
         public static void SetEndindex(string endIndex)
@@ -115,6 +126,16 @@ namespace CORESubscriber
                 .SetAttributeValue(XmlAttributes.Transaction, transaction);
 
             Provider.Save();
+        }
+
+        public static int GetTransaction()
+        {
+            var transaction = GetDatasetConfigFirstDescendant(XmlElements.AbortedChangelog)
+                .Attribute(XmlAttributes.Transaction).Value;
+            if (string.IsNullOrEmpty(transaction)) return 0;
+
+            return Convert.ToInt32(GetDatasetConfigFirstDescendant(XmlElements.AbortedChangelog)
+                .Attribute(XmlAttributes.Transaction).Value);
         }
 
         private static void SetAbortedchangelogToChangelogId()
