@@ -163,6 +163,7 @@ namespace CORESubscriber
         private static void GetChangelogFromProvider()
         {
             if (Provider.GeosynchronizationNamespace == XmlNamespaces.Geosynchronization11) OrderChangelog.Run();
+
             else OrderChangelog2.Run();
 
             GetChangelogStatus.Run();
