@@ -32,7 +32,7 @@ namespace CORESubscriber
 
         internal static string ErrorLog = "errorLog.txt";
 
-        internal static int StatusQueryDelay = 3000;
+        internal static int StatusQueryDelay = 300;
 
         public static string OrderedChangeCount = "1000";
     }
