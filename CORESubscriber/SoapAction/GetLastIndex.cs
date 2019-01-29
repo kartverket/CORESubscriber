@@ -15,9 +15,6 @@ namespace CORESubscriber.SoapAction
 
             Dataset.SetProviderLastIndex(GetLastIndexFromProvider(xDocument));
 
-            Console.WriteLine("Provider LastIndex: " + Dataset.ProviderLastIndex + ", Subscriber Lastindex: " +
-                              Dataset.SubscriberLastIndex);
-
             return Dataset.ProviderLastIndex > Dataset.SubscriberLastIndex;
         }
 
