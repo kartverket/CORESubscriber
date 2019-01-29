@@ -13,18 +13,13 @@ namespace CORESubscriber.SoapAction
 
             getChangelogStatus.Descendants(Provider.GeosynchronizationNamespace + XmlAttributes.ChangelogId.LocalName)
                     .First().Value =
-                Dataset.OrderedChangelogId.ToString();
+                Dataset.OrderedChangelogId;
 
-            var queryCounter = 0;
+            var queryCounter = 1;
 
             while (true)
             {
-                queryCounter++;
-
-                var responseContent = SoapRequest.Send(SoapActions.GetChangelogStatus, getChangelogStatus);
-
-                var returnValue = responseContent.Descendants(Provider.GeosynchronizationNamespace + "return").First()
-                    .Value;
+                var returnValue = GetChangelogStatusResponseValue(getChangelogStatus);
 
                 Console.WriteLine("Query " + queryCounter + ": changelog with ID " + Dataset.OrderedChangelogId +
                                   " is " + returnValue);
@@ -33,7 +28,7 @@ namespace CORESubscriber.SoapAction
                 {
                     case "queued":
                     case "working":
-                        Task.Delay(Config.StatusQueryDelay).Wait();
+                        Task.Delay(Config.StatusQueryDelay * queryCounter++).Wait();
                         continue;
                     case "finished":
                         return;
@@ -42,6 +37,17 @@ namespace CORESubscriber.SoapAction
                                             returnValue);
                 }
             }
+        }
+
+        private static string GetChangelogStatusResponseValue(System.Xml.Linq.XDocument getChangelogStatus)
+        {
+            return GetResponseContent(getChangelogStatus).Descendants(Provider.GeosynchronizationNamespace + "return").First()
+                .Value;
+        }
+
+        private static System.Xml.Linq.XDocument GetResponseContent(System.Xml.Linq.XDocument getChangelogStatus)
+        {
+            return SoapRequest.Send(SoapActions.GetChangelogStatus, getChangelogStatus);
         }
     }
 }
