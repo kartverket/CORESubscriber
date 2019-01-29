@@ -40,7 +40,9 @@ namespace CORESubscriber
 
         internal static void Save()
         {
-            using (var fileStream = new FileStream(ConfigFile, FileMode.Create)) ConfigFileXml.Save(fileStream);
+            using (var stream = File.Open(ConfigFile, FileMode.Create)) ConfigFileXml.Save(stream);
+
+            ConfigFileXml = ReadConfigFile();
         }
 
         internal static void ReadSettings()
@@ -62,7 +64,7 @@ namespace CORESubscriber
 
         private static XDocument ReadConfigFile()
         {
-            return XDocument.Parse(File.ReadAllText(ConfigFile));
+            using (var stream = File.Open(ConfigFile, FileMode.Open)) return XDocument.Load(stream);
         }
 
         private static void AddDatasetsToDocument(IEnumerable<XElement> datasetsList, XContainer datasetsDocument)
