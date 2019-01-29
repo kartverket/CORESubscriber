@@ -14,7 +14,7 @@ namespace CORESubscriber
 {
     internal class Changelog
     {
-        private static string DataFolder { get; set; }
+        public static string DataFolder { get; set; }
 
         private static int Transaction { get; set; }
 
@@ -27,7 +27,7 @@ namespace CORESubscriber
             ExtractFilesToDatafolder(zipFilePath);
         }
 
-        private static void ExtractFilesToDatafolder(string zipFilePath)
+        public static void ExtractFilesToDatafolder(string zipFilePath)
         {
             if (Directory.Exists(DataFolder)) Directory.Delete(DataFolder, true);
 
@@ -46,7 +46,7 @@ namespace CORESubscriber
 
         }
 
-        internal static void Execute()
+        internal static void Run()
         {
             var directoryInfo = new DirectoryInfo(DataFolder);
 
@@ -85,6 +85,15 @@ namespace CORESubscriber
 
         private static void PrepareAndSendTransaction(XElement transaction)
         {
+            if (Dataset.GetTransaction() > Transaction)
+            {
+                Console.WriteLine("Transaction already run. Skipping");
+
+                Transaction++;
+
+                return;
+            }
+
             Send(SetTransactionValues(transaction));
 
             Dataset.SetTransaction(Transaction++.ToString());
@@ -96,7 +105,11 @@ namespace CORESubscriber
 
             transaction.SetAttributeValue("version", "2.0.0");
 
-            return new XDocument(transaction);
+            var xTransaction = new XDocument(transaction);
+
+            File.WriteAllText($"{Config.DownloadFolder}\\lastTransaction.xml", xTransaction.ToString());
+
+            return xTransaction;
         }
 
         private static void Send(XNode transactionDocument)
@@ -145,7 +158,7 @@ namespace CORESubscriber
             return Config.DownloadFolder + "/" + changelogFileName;
         }
 
-        private static void SetDataFolder(string changelogFileName)
+        public static void SetDataFolder(string changelogFileName)
         {
             DataFolder = Config.DownloadFolder + "/" + changelogFileName.Split(".")[0];
         }
