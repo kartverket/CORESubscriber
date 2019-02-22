@@ -105,7 +105,7 @@ namespace CORESubscriber
 
             var xTransaction = new XDocument(transaction);
 
-            File.WriteAllText($"{Config.DownloadFolder}\\lastTransaction.xml", xTransaction.ToString());
+            File.WriteAllText($"{Config.DownloadFolder}/lastTransaction.xml", xTransaction.ToString());
 
             return xTransaction;
         }
