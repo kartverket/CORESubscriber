@@ -168,7 +168,7 @@ namespace CORESubscriber
 
         private static HttpResponseMessage GetResult(string downloadUrl)
         {
-            using (var client = SetCredentials(new HttpClient())) return client.GetAsync(downloadUrl).Result;
+            using (var client = SetCredentials(new HttpClient())) return client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead).Result;
         }
 
         private static HttpClient SetCredentials(HttpClient client)
