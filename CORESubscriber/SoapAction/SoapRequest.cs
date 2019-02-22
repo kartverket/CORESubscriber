@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Threading;
 using System.Xml.Linq;
 using CORESubscriber.Xml;
 
@@ -37,7 +38,10 @@ namespace CORESubscriber.SoapAction
         {
             var byteArray = Encoding.ASCII.GetBytes(Provider.User + ":" + Provider.Password);
 
-            var client = new HttpClient();
+            var client = new HttpClient
+            {
+                Timeout = Timeout.InfiniteTimeSpan
+            };
 
             client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
