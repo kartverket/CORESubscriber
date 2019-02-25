@@ -83,9 +83,11 @@ namespace CORESubscriber
 
         private static void PrepareAndSendTransaction(XElement transaction)
         {
-            if (Dataset.GetTransaction() > Transaction)
+            var abortedTransaction = Dataset.GetTransaction();
+
+            if (abortedTransaction > Transaction)
             {
-                Console.WriteLine("Transaction already run. Skipping");
+                Console.WriteLine($"Transaction {Transaction} is lower than abortedTransaction ({abortedTransaction}). Skipping");
 
                 Transaction++;
 
@@ -94,7 +96,9 @@ namespace CORESubscriber
 
             Send(SetTransactionValues(transaction));
 
-            Dataset.SetTransaction(Transaction++.ToString());
+            Transaction++;
+
+            Dataset.SetTransaction(Transaction.ToString());
         }
 
         private static XDocument SetTransactionValues(XElement transaction)
