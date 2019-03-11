@@ -62,9 +62,9 @@ namespace CORESubscriber
                 directory.GetFiles().ToList().ForEach(DoTransactions));
         }
 
-        private static XDocument GetChangelogXml(FileInfo fileInfo)
+        private static XDocument GetChangelogXml(string xmlFilePath)
         {
-            return XDocument.Parse(fileInfo.OpenText().ReadToEnd());
+            return XDocument.Load(xmlFilePath);
         }
 
         private static string GetEndIndex(XContainer changeLogXml)
@@ -74,7 +74,8 @@ namespace CORESubscriber
 
         private static void DoTransactions(FileInfo fileInfo)
         {
-            var changelogXml = GetChangelogXml(fileInfo);
+            var xmlFilePath = fileInfo.FullName;
+            var changelogXml = GetChangelogXml(xmlFilePath);
 
             Dataset.SetEndindex(GetEndIndex(changelogXml));
 
@@ -109,20 +110,24 @@ namespace CORESubscriber
             transaction.SetAttributeValue("version", "2.0.0");
 
             var xTransaction = new XDocument(transaction);
-
-            File.WriteAllText($"{Config.DownloadFolder}/lastTransaction.xml", xTransaction.ToString());
+            string lastTranPath = Path.Combine($"{Config.DownloadFolder}", "lastTransaction.xml");
+            System.IO.File.Delete(lastTranPath);
+            xTransaction.Save(lastTranPath);
 
             return xTransaction;
         }
 
-        private static void Send(XNode transactionDocument)
+        private static void Send(XDocument transactionDocument)
         {
             using (var client = new HttpClient())
             {
-                var request = new HttpRequestMessage(HttpMethod.Post, Dataset.GetWfsClient())
-                {
-                    Content = GetHttpContent(transactionDocument)
-                };
+                client.Timeout = TimeSpan.FromMinutes(5);
+                var request = new HttpRequestMessage(HttpMethod.Post, Dataset.GetWfsClient());
+                Stream stream = new MemoryStream();
+                transactionDocument.Save(stream);
+                stream.Position = 0;
+                request.Content = new StreamContent(stream);
+
 
                 var response = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).Result;
 
@@ -134,11 +139,6 @@ namespace CORESubscriber
 
                 WriteTransactionSummaryToConsole(responseMessage);
             }
-        }
-
-        private static StringContent GetHttpContent(XNode transactionDocument)
-        {
-            return new StringContent(transactionDocument.ToString(), Encoding.UTF8, Config.XmlMediaType);
         }
 
         private static string GetResponseMessage(HttpResponseMessage response)
