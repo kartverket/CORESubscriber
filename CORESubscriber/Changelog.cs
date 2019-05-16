@@ -107,11 +107,29 @@ namespace CORESubscriber
 
             transaction.SetAttributeValue("version", "2.0.0");
 
+            AddNamespaceForReplace(transaction);
+
             var xTransaction = new XDocument(transaction);
 
             File.WriteAllText($"{Config.DownloadFolder}/lastTransaction.xml", xTransaction.ToString());
 
             return xTransaction;
+        }
+
+        private static void AddNamespaceForReplace(XContainer transaction)
+        {
+            foreach (var replace in transaction.Elements(XmlNamespaces.Wfs + "Replace"))
+            {
+                var firstDescendant = replace.Descendants().First();
+                var nameSpace = firstDescendant.Name.Namespace;
+                var namespaceAttribute =
+                    new XAttribute(XNamespace.Xmlns + firstDescendant.GetPrefixOfNamespace(nameSpace),
+                        nameSpace.NamespaceName);
+
+                if(replace.Attributes().Any(a => a.IsNamespaceDeclaration && a.Value == nameSpace.NamespaceName)) continue;
+
+                replace.Add(namespaceAttribute);
+            }
         }
 
         private static void Send(XNode transactionDocument)
