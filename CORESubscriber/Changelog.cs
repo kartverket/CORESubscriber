@@ -77,8 +77,21 @@ namespace CORESubscriber
 
             Dataset.SetEndindex(GetEndIndex(changelogXml));
 
-            changelogXml.Descendants(Provider.ChangelogNamespace + "transactions")
-                .ToList().ForEach(PrepareAndSendTransaction);
+            try
+            {
+                changelogXml.Descendants(Provider.ChangelogNamespace + "transactions")
+                    .ToList().ForEach(PrepareAndSendTransaction);
+            }
+            catch (TransactionAbortedException)
+            {
+                Console.WriteLine("ERROR: Something went wrong in transaction. Attempting to validate changelog.");
+
+                Validator.Validate(changelogXml);
+
+                Console.WriteLine("INFO: Changelog is valid.");
+
+                throw;
+            }
         }
 
         private static void PrepareAndSendTransaction(XElement transaction)
