@@ -25,7 +25,18 @@ namespace CORESubscriber
             var message =
                 "ERROR: Validation failed. Listing errors\r\n----------------------------------------------------------------\r\n";
 
-            validationErrors.ForEach(error => message += $"\r\n\tLocalId: {error.LocalId}\r\n\r\n{error.ErrorText}\r\n\r\n----------------------------------------------------------------\r\n");
+            foreach (var validationError in validationErrors)
+            {
+                message += $"\r\n\tLocalId: {validationError.LocalId}";
+                
+                foreach ( var errorText in validationError.ErrorTexts)
+                    message +=
+                        $"\r\n\r\n{errorText}";
+
+                message += "\r\n\r\n----------------------------------------------------------------\r\n";
+            }
+
+            
             
             return message;
         }
@@ -42,14 +53,18 @@ namespace CORESubscriber
             {
                 var parent = GetParent(o);
 
-                var identifikasjon = parent.Descendants().First(n => n.Name.LocalName == "lokalId").Value;
+                var localId = parent.Descendants().First(n => n.Name.LocalName == "lokalId").Value;
 
-                validationErrors.Add(new ValidationError
-                {
-                    Element = parent,
-                    LocalId = identifikasjon,
-                    ErrorText = e.Message
-                });
+                if (validationErrors.Any(v => v.LocalId == localId))
+                    validationErrors.First(v => v.LocalId == localId).ErrorTexts.Add(e.Message);
+                
+                else
+                    validationErrors.Add(new ValidationError
+                    {
+                        Element = parent,
+                        LocalId = localId,
+                        ErrorTexts = new List<string> {e.Message}
+                    });
             });
 
             return validationErrors;
@@ -85,7 +100,7 @@ namespace CORESubscriber
         internal class ValidationError
         {
             public XElement Element { get; set; }
-            public string ErrorText { get; set; }
+            public List<string> ErrorTexts { get; set; }
             public string LocalId { get; set; }
         }
     }
