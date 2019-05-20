@@ -105,6 +105,17 @@ namespace CORESubscriber
                 {
                     datasetsFailed.Add(Dataset.GetDatasetIdFromElement(subscribedElement));
 
+                    if (Dataset.GetTransaction() == 0)
+                    {
+                        Dataset.ResetAbortedChangelog();
+
+                        Dataset.SetOrderedChangelogId("0");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"WARNING: Dataset with id {datasetsFailed.Last()} is left in unknown state due to partial commits of transactions. The subscriber will keep trying to commit the active changelog, but no longer knows which changeId it is currently at. If this problem persists you need to empty the database and synchronize this dataset from scratch.");
+                    }
+
                     HandleExceptionText(e);
                 }
             }
@@ -141,9 +152,12 @@ namespace CORESubscriber
 
             WriteDatasetInformation();
 
-            GetChangelog();
+            //while (Dataset.SubscriberLastIndex < Dataset.GetProviderLastIndex())
+            //{
+                GetChangelog();
 
-            Changelog.Run();
+                Changelog.Run();
+            //}
 
             Dataset.ProviderLastIndex = Dataset.GetProviderLastIndex();
 
