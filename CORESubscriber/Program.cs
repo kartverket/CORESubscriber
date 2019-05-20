@@ -91,23 +91,46 @@ namespace CORESubscriber
         {
             var timer = StartTimer();
 
-            var datasetsUpdated = GetSubscribedElements().Select(SynchronizeDataset).ToList();
+            var datasetsUpdated = new List<string>();
 
+            var datasetsFailed = new List<string>();
+
+            foreach (var subscribedElement in GetSubscribedElements())
+            {
+                try
+                {
+                    datasetsUpdated.Add(SynchronizeDataset(subscribedElement));
+                }
+                catch (Exception e)
+                {
+                    datasetsFailed.Add(Dataset.GetDatasetIdFromElement(subscribedElement));
+
+                    HandleExceptionText(e);
+                }
+            }
+            
             timer.Stop();
 
-            WriteStatus(datasetsUpdated.Any(d => !string.IsNullOrWhiteSpace(d)), timer);
+            WriteStatus(datasetsUpdated.Any(d => !string.IsNullOrWhiteSpace(d)), datasetsFailed, timer);
         }
 
-        private static void WriteStatus(bool updatesFound, Stopwatch timer)
+        private static void WriteStatus(bool updatesFound, IReadOnlyCollection<string> datasetsFailed, Stopwatch timer)
         {
             if (updatesFound)
             {
-                Console.WriteLine($"Time used: {timer.Elapsed}");
+                Console.WriteLine($"INFO: Time used: {timer.Elapsed}");
 
                 return;
             }
 
-            Console.WriteLine("All datasets are up to date");
+            if (datasetsFailed.Count > 0)
+            {
+                Console.WriteLine($"ERROR: Datasets failed \r\n\t{string.Join(", ",datasetsFailed.Select(d => d).ToList())}");
+
+                return;
+            }
+
+            Console.WriteLine("INFO: All datasets are up to date");
         }
 
         private static string SynchronizeDataset(XObject subscribed)
