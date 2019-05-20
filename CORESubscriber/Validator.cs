@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Xml;
@@ -35,6 +36,8 @@ namespace CORESubscriber
 
             var validationErrors = new List<ValidationError>();
 
+            Console.WriteLine("INFO: Starting validation");
+
             changelogXml.Validate(schemas, (o, e) =>
             {
                 var parent = GetParent(o);
@@ -63,6 +66,8 @@ namespace CORESubscriber
             for (var i = 0; i <= schemaLocationSplit.Length / 2; i = i + 2)
             {
                 if (schemaLocationSplit[i] == XmlNamespaces.Changelog) continue;
+
+                Console.WriteLine($"INFO: Adding schema {schemaLocationSplit[i + 1]}");
 
                 schemas.Add(XmlSchema.Read(new XmlTextReader(schemaLocationSplit[i + 1]), (sender, args) => { }));
             }
