@@ -58,7 +58,7 @@ namespace CORESubscriber
         private static void ReadFiles(DirectoryInfo directoryInfo)
         {
             directoryInfo.GetDirectories().ToList().ForEach(directory =>
-                directory.GetFiles().ToList().ForEach(DoTransactions));
+                directory.GetFiles().ToList().OrderBy(f => f.Name).ToList().ForEach(DoTransactions));
         }
 
         private static XDocument GetChangelogXml(FileInfo fileInfo)
