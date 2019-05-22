@@ -40,9 +40,24 @@ namespace CORESubscriber
 
         internal static void Save()
         {
+            while (!IsFileReady(ConfigFile)) { }
+
             using (var stream = File.Open(ConfigFile, FileMode.Create)) ConfigFileXml.Save(stream);
 
-            ConfigFileXml = ReadConfigFile();
+            //ConfigFileXml = ReadConfigFile();
+        }
+
+        internal static bool IsFileReady(string filename)
+        {
+            try
+            {
+                using (var inputStream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.None))
+                    return inputStream.Length > 0;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         internal static void ReadSettings()
