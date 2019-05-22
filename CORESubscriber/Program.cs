@@ -107,9 +107,7 @@ namespace CORESubscriber
 
                     if (Dataset.GetTransaction() == 0)
                     {
-                        Dataset.ResetAbortedChangelog();
-
-                        Dataset.SetOrderedChangelogId("0");
+                        ResetAbortedChangeLog();
                     }
                     else
                     {
@@ -123,6 +121,13 @@ namespace CORESubscriber
             timer.Stop();
 
             WriteStatus(datasetsUpdated.Any(d => !string.IsNullOrWhiteSpace(d)), datasetsFailed, timer);
+        }
+
+        private static void ResetAbortedChangeLog()
+        {
+            Dataset.ResetAbortedChangelog();
+
+            Dataset.SetOrderedChangelogId("0");
         }
 
         private static void WriteStatus(bool updatesFound, IReadOnlyCollection<string> datasetsFailed, Stopwatch timer)
@@ -165,10 +170,12 @@ namespace CORESubscriber
 
         private static void GetChangelog()
         {
+            if (Dataset.GetTransaction() == 0) ResetAbortedChangeLog();
+
             var abortedChangelogId = Dataset.GetAbortedChangelogId();
 
             var changelogPath = Dataset.GetChangelogPath();
-
+            
             if (abortedChangelogId == Dataset.EmptyValue)
             {
                 GetChangelogFromProvider();
