@@ -116,6 +116,8 @@ namespace CORESubscriber
                     
                     HandleExceptionText(e);
                 }
+
+                Changelog.Transaction = 0;
             }
             
             timer.Stop();

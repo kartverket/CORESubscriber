@@ -16,7 +16,7 @@ namespace CORESubscriber
     {
         public static string DataFolder { get; set; }
 
-        private static int Transaction { get; set; }
+        internal static int Transaction { get; set; }
 
         internal static async Task Get(string downloadUrl)
         {
@@ -84,6 +84,8 @@ namespace CORESubscriber
             }
             catch (TransactionAbortedException)
             {
+                Transaction = 0;
+
                 Console.WriteLine("ERROR: Something went wrong in transaction. Attempting to validate changelog.");
 
                 Validator.Validate(changelogXml);
