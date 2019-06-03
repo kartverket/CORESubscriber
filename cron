@@ -1,0 +1,1 @@
+* * * * * cd /app; if [ -f working ]; then echo "Sync in progress"; else echo "Sync starting"; touch working; dotnet CORESubscriber.dll sync /provider/config.xml /tmp; echo "Sync finished"; rm working; fi; 

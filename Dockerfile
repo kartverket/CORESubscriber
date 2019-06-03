@@ -15,4 +15,5 @@ RUN dotnet publish CORESubscriber.csproj -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
+COPY ./cron /app/
 RUN apk update cron 
