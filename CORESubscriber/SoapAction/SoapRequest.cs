@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -29,9 +30,14 @@ namespace CORESubscriber.SoapAction
 
             var client = GetClient();
 
-            var response = client.SendAsync(request);
+            var response = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).Result;
 
-            return XDocument.Parse(response.Result.Content.ReadAsStringAsync().Result);
+            var responseMessage = response.Content.ReadAsStringAsync().Result;
+
+            if (!response.IsSuccessStatusCode) throw new WebException(
+                $"Query failed. Message from Provider: \r\n{responseMessage}");
+            
+            return XDocument.Parse(responseMessage);
         }
 
         private static HttpClient GetClient()
@@ -57,7 +63,7 @@ namespace CORESubscriber.SoapAction
             {
                 RequestUri = new Uri(Provider.ApiUrl),
                 Method = HttpMethod.Post,
-                Content = new StringContent(soapXml.ToString(), Encoding.UTF8, Config.XmlMediaType)
+                Content = new StringContent(soapXml.ToString(), Encoding.UTF8, Config.XmlMediaType),
             };
 
             request.Headers.Clear();

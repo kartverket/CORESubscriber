@@ -2,6 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -151,13 +152,20 @@ namespace CORESubscriber
         {
             using (var client = new HttpClient())
             {
-                var response = client.PostAsync(Dataset.GetWfsClient(), GetHttpContent(transactionDocument));
+                var request = new HttpRequestMessage(HttpMethod.Post, Dataset.GetWfsClient())
+                {
+                    Content = GetHttpContent(transactionDocument)
+                };
 
-                if (!response.Result.IsSuccessStatusCode)
+                var response = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).Result;
+
+                var responseMessage = GetResponseMessage(response);
+
+                if (!response.IsSuccessStatusCode)
                     throw new TransactionAbortedException(
-                        $"Transaction failed. Message from WFS-server: \r\n{GetResponseErrorMessage(response)}");
+                        $"Transaction failed. Message from WFS-server: \r\n{responseMessage}");
 
-                WriteTransactionSummaryToConsole(response);
+                WriteTransactionSummaryToConsole(responseMessage);
             }
         }
 
@@ -166,15 +174,14 @@ namespace CORESubscriber
             return new StringContent(transactionDocument.ToString(), Encoding.UTF8, Config.XmlMediaType);
         }
 
-        private static string GetResponseErrorMessage(Task<HttpResponseMessage> response)
+        private static string GetResponseMessage(HttpResponseMessage response)
         {
-            return response.Result.Content.ReadAsStringAsync().Result;
+            return response.Content.ReadAsStringAsync().Result;
         }
 
-        private static void WriteTransactionSummaryToConsole(Task<HttpResponseMessage> response)
+        private static void WriteTransactionSummaryToConsole(string responseMessage)
         {
-            Console.WriteLine(XDocument.Parse(response.Result.Content.ReadAsStringAsync().Result)
-                .Descendants(XmlNamespaces.Wfs + "TransactionSummary").First().ToString());
+            Console.WriteLine(XDocument.Parse(responseMessage).Descendants(XmlNamespaces.Wfs + "TransactionSummary").First().ToString());
         }
 
         private static async Task SaveZipFile(string zipFilePath, HttpResponseMessage result)
