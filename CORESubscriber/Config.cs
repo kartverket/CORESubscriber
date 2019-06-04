@@ -34,6 +34,6 @@ namespace CORESubscriber
 
         internal static int StatusQueryDelay = 300;
 
-        public static string OrderedChangeCount = "1000";
+        public static string OrderedChangeCount = "10000";
     }
 }
